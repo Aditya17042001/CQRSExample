@@ -1,0 +1,21 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.restartSubsystem = async function (baseOptions = {}) {
+    const req = new shared_pb_1.Empty();
+    utils_1.debug.command("restartSubsystem: %O", {
+        options: baseOptions,
+    });
+    utils_1.debug.command_grpc("restartSubsystem: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "restartSubsystem", (client) => new Promise((resolve, reject) => {
+        client.restartSubsystem(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+//# sourceMappingURL=restartSubsystem.js.map

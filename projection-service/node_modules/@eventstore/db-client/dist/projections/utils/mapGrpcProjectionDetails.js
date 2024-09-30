@@ -1,0 +1,31 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mapGrpcProjectionDetails = void 0;
+const mapGrpcProjectionDetails = (grpcProjectionDetails) => {
+    const details = grpcProjectionDetails.toObject();
+    const [projectionStatus, processingStatus = ""] = details.status.split("/");
+    return {
+        coreProcessingTime: BigInt(details.coreprocessingtime),
+        version: BigInt(details.version),
+        epoch: BigInt(details.epoch),
+        effectiveName: details.effectivename,
+        writesInProgress: details.writesinprogress,
+        readsInProgress: details.readsinprogress,
+        partitionsCached: details.partitionscached,
+        status: details.status,
+        projectionStatus: projectionStatus,
+        processingStatus: processingStatus,
+        stateReason: details.statereason,
+        name: details.name,
+        position: details.position,
+        progress: details.progress,
+        lastCheckpoint: details.lastcheckpoint,
+        eventsProcessedAfterRestart: BigInt(details.eventsprocessedafterrestart),
+        checkpointStatus: details.checkpointstatus,
+        bufferedEvents: BigInt(details.bufferedevents),
+        writePendingEventsBeforeCheckpoint: details.writependingeventsbeforecheckpoint,
+        writePendingEventsAfterCheckpoint: details.writependingeventsaftercheckpoint,
+    };
+};
+exports.mapGrpcProjectionDetails = mapGrpcProjectionDetails;
+//# sourceMappingURL=mapGrpcProjectionDetails.js.map

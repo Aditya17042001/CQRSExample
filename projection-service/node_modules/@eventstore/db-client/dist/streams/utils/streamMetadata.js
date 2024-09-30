@@ -1,0 +1,77 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.readStreamMetadata = exports.prepareStreamMetadata = void 0;
+const MAX_AGE = "$maxAge";
+const MAX_COUNT = "$maxCount";
+const TRUNCATE_BEFORE = "$tb";
+const CACHE_CONTROL = "$cacheControl";
+const ACL = "$acl";
+const ACL_READ = "$r";
+const ACL_WRITE = "$w";
+const ACL_DELETE = "$d";
+const ACL_META_READ = "$mr";
+const ACL_META_WRITE = "$mw";
+const convertAcl = (keyLookup) => (acl) => {
+    if (typeof acl === "string")
+        return acl;
+    return Object.entries(acl).reduce((acc, [key, value]) => {
+        if (keyLookup[key])
+            return { ...acc, [keyLookup[key]]: value };
+        console.warn(`Unknown key "${key}" in acl will be ignored`);
+        return acc;
+    }, {});
+};
+const prepareAcl = convertAcl({
+    readRoles: ACL_READ,
+    writeRoles: ACL_WRITE,
+    deleteRoles: ACL_DELETE,
+    metaReadRoles: ACL_META_READ,
+    metaWriteRoles: ACL_META_WRITE,
+});
+const readAcl = convertAcl({
+    [ACL_READ]: "readRoles",
+    [ACL_WRITE]: "writeRoles",
+    [ACL_DELETE]: "deleteRoles",
+    [ACL_META_READ]: "metaReadRoles",
+    [ACL_META_WRITE]: "metaWriteRoles",
+});
+const ensureInteger = (key, value) => {
+    if (Number.isInteger(value))
+        return value;
+    throw new Error(`Invalid stream metadata: "${key}" must be an integer.`);
+};
+const prepareStreamMetadata = (metadata) => Object.entries(metadata).reduce((acc, [key, value]) => {
+    switch (key) {
+        case "maxAge":
+            return { ...acc, [MAX_AGE]: ensureInteger(key, value) };
+        case "truncateBefore":
+            return { ...acc, [TRUNCATE_BEFORE]: ensureInteger(key, value) };
+        case "cacheControl":
+            return { ...acc, [CACHE_CONTROL]: ensureInteger(key, value) };
+        case "maxCount":
+            return { ...acc, [MAX_COUNT]: ensureInteger(key, value) };
+        case "acl":
+            return { ...acc, [ACL]: prepareAcl(value) };
+        default:
+            return { ...acc, [key]: value };
+    }
+}, {});
+exports.prepareStreamMetadata = prepareStreamMetadata;
+const readStreamMetadata = (metadata) => Object.entries(metadata).reduce((acc, [key, value]) => {
+    switch (key) {
+        case MAX_AGE:
+            return { ...acc, maxAge: value };
+        case TRUNCATE_BEFORE:
+            return { ...acc, truncateBefore: value };
+        case CACHE_CONTROL:
+            return { ...acc, cacheControl: value };
+        case MAX_COUNT:
+            return { ...acc, maxCount: value };
+        case ACL:
+            return { ...acc, acl: readAcl(value) };
+        default:
+            return { ...acc, [key]: value };
+    }
+}, {});
+exports.readStreamMetadata = readStreamMetadata;
+//# sourceMappingURL=streamMetadata.js.map

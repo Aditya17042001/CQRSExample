@@ -1,0 +1,15 @@
+import type { BaseOptions } from "../types";
+import type { PersistentSubscriptionToStreamSettings } from "./utils/persistentSubscriptionSettings";
+declare module "../Client" {
+    interface Client {
+        /**
+         * Updates a persistent subscription configuration.
+         * @param streamName - A stream name.
+         * @param groupName - A group name.
+         * @param settings - PersistentSubscription settings.
+         * @see {@link persistentSubscriptionToStreamSettingsFromDefaults}
+         * @param options - Command options.
+         */
+        updatePersistentSubscriptionToStream(streamName: string, groupName: string, settings: PersistentSubscriptionToStreamSettings, options?: BaseOptions): Promise<void>;
+    }
+}

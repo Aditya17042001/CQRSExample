@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+const events_1 = require("../events");
+const streamMetadata_1 = require("./utils/streamMetadata");
+const systemStreams_1 = require("./utils/systemStreams");
+Client_1.Client.prototype.setStreamMetadata = async function (streamName, metadata, options = {}) {
+    utils_1.debug.command("setStreamMetadata: %O", {
+        streamName,
+        metadata,
+        options,
+    });
+    const event = (0, events_1.jsonEvent)({
+        type: "$metadata",
+        data: (0, streamMetadata_1.prepareStreamMetadata)(metadata),
+    });
+    return this.appendToStream((0, systemStreams_1.metastreamOf)(streamName), event, options);
+};
+//# sourceMappingURL=setStreamMetadata.js.map

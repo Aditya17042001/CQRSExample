@@ -1,0 +1,51 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const persistent_pb_1 = require("../../generated/persistent_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+const mapPersistentSubscriptionInfo_1 = require("./utils/mapPersistentSubscriptionInfo");
+Client_1.Client.prototype.listPersistentSubscriptionsToStream = async function (streamName, options = {}) {
+    utils_1.debug.command("listPersistentSubscriptionsToStream: %O", {
+        streamName,
+        options,
+    });
+    if (await this.supports(persistent_grpc_pb_1.PersistentSubscriptionsService.list, "stream")) {
+        return listPersistentSubscriptionsToStreamGRPC.call(this, streamName, options);
+    }
+    return listPersistentSubscriptionsToStreamHTTP.call(this, streamName, options);
+};
+const listPersistentSubscriptionsToStreamGRPC = async function (streamName, baseOptions = {}) {
+    const req = new persistent_pb_1.ListReq();
+    const options = new persistent_pb_1.ListReq.Options();
+    const streamOption = new persistent_pb_1.ListReq.StreamOption();
+    const identifier = (0, utils_1.createStreamIdentifier)(streamName);
+    streamOption.setStream(identifier);
+    options.setListForStream(streamOption);
+    req.setOptions(options);
+    utils_1.debug.command_grpc("listPersistentSubscriptionsToStream: %g", req);
+    return this.execute(persistent_grpc_pb_1.PersistentSubscriptionsClient, "listPersistentSubscriptionsToStream", (client) => new Promise((resolve, reject) => {
+        client.list(req, ...this.callArguments(baseOptions), (error, response) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve(response
+                .getSubscriptionsList()
+                .map((r) => (0, mapPersistentSubscriptionInfo_1.mapPersistentSubscriptionToStreamInfo)(r)));
+        });
+    }));
+};
+const listPersistentSubscriptionsToStreamHTTP = async function (streamName, baseOptions = {}) {
+    const basicList = await this.HTTPRequest("GET", `/subscriptions/${encodeURIComponent(streamName)}`, {
+        ...baseOptions,
+        transformError(statusCode) {
+            if (statusCode === 404) {
+                return new utils_1.PersistentSubscriptionDoesNotExistError(undefined, {
+                    streamName,
+                });
+            }
+        },
+    });
+    const list = await Promise.all(basicList.map(({ eventStreamId, groupName }) => this.HTTPRequest("GET", `/subscriptions/${encodeURIComponent(eventStreamId)}/${encodeURIComponent(groupName)}/info`, baseOptions)));
+    return list.map((info) => (0, mapPersistentSubscriptionInfo_1.mapHTTPPersistentSubscriptionInfo)(info));
+};
+//# sourceMappingURL=listPersistentSubscriptionsToStream.js.map

@@ -1,0 +1,19 @@
+import type { BaseOptions } from "../types";
+export interface ReplayParkedMessagesToStreamOptions extends BaseOptions {
+    /**
+     * When to stop replaying parked messages. Leave undefined to have no limit.
+     * @defaultValue undefined
+     */
+    stopAt?: number | bigint;
+}
+declare module "../Client" {
+    interface Client {
+        /**
+         * Replays the parked messages of a persistent subscription.
+         * @param streamName - A stream name.
+         * @param groupName - A group name.
+         * @param options - Replay options.
+         */
+        replayParkedMessagesToStream(streamName: string, groupName: string, options?: ReplayParkedMessagesToStreamOptions): Promise<void>;
+    }
+}

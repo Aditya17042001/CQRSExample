@@ -1,0 +1,33 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const persistent_pb_1 = require("../../generated/persistent_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+const mapPersistentSubscriptionInfo_1 = require("./utils/mapPersistentSubscriptionInfo");
+Client_1.Client.prototype.listPersistentSubscriptionsToAll = async function (baseOptions = {}) {
+    if (!(await this.supports(persistent_grpc_pb_1.PersistentSubscriptionsService.list, "all"))) {
+        throw new utils_1.UnsupportedError("listPersistentSubscriptionsToAll", "21.10.1");
+    }
+    const req = new persistent_pb_1.ListReq();
+    const options = new persistent_pb_1.ListReq.Options();
+    const streamOption = new persistent_pb_1.ListReq.StreamOption();
+    streamOption.setAll(new shared_pb_1.Empty());
+    options.setListForStream(streamOption);
+    req.setOptions(options);
+    utils_1.debug.command("listPersistentSubscriptionsToAll: %O", {
+        options: baseOptions,
+    });
+    utils_1.debug.command_grpc("listPersistentSubscriptionsToAll: %g", req);
+    return this.execute(persistent_grpc_pb_1.PersistentSubscriptionsClient, "listPersistentSubscriptionsToAll", (client) => new Promise((resolve, reject) => {
+        client.list(req, ...this.callArguments(baseOptions), (error, response) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve(response
+                .getSubscriptionsList()
+                .map((r) => (0, mapPersistentSubscriptionInfo_1.mapPersistentSubscriptionToAllInfo)(r)));
+        });
+    }));
+};
+//# sourceMappingURL=listPersistentSubscriptionsToAll.js.map

@@ -1,0 +1,52 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const streams_grpc_pb_1 = require("../../generated/streams_grpc_pb");
+const streams_pb_1 = require("../../generated/streams_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const Client_1 = require("../Client");
+const constants_1 = require("../constants");
+const utils_1 = require("../utils");
+const Subscription_1 = require("./utils/Subscription");
+Client_1.Client.prototype.subscribeToStream = function (streamName, { fromRevision = constants_1.START, resolveLinkTos = false, ...baseOptions } = {}, readableOptions = {}) {
+    const req = new streams_pb_1.ReadReq();
+    const options = new streams_pb_1.ReadReq.Options();
+    const streamOptions = new streams_pb_1.ReadReq.Options.StreamOptions();
+    const uuidOption = new streams_pb_1.ReadReq.Options.UUIDOption();
+    const identifier = (0, utils_1.createStreamIdentifier)(streamName);
+    uuidOption.setString(new shared_pb_1.Empty());
+    streamOptions.setStreamIdentifier(identifier);
+    switch (fromRevision) {
+        case constants_1.START: {
+            streamOptions.setStart(new shared_pb_1.Empty());
+            break;
+        }
+        case constants_1.END: {
+            streamOptions.setEnd(new shared_pb_1.Empty());
+            break;
+        }
+        default: {
+            streamOptions.setRevision(fromRevision.toString(10));
+            break;
+        }
+    }
+    options.setStream(streamOptions);
+    options.setResolveLinks(resolveLinkTos);
+    options.setSubscription(new streams_pb_1.ReadReq.Options.SubscriptionOptions());
+    options.setUuidOption(uuidOption);
+    options.setNoFilter(new shared_pb_1.Empty());
+    req.setOptions(options);
+    utils_1.debug.command("subscribeToStream: %O", {
+        streamName,
+        options: {
+            fromRevision,
+            resolveLinkTos,
+            ...baseOptions,
+        },
+    });
+    utils_1.debug.command_grpc("subscribeToStream: %g", req);
+    const createGRPCStream = this.GRPCStreamCreator(streams_grpc_pb_1.StreamsClient, "subscribeToStream", (client) => client.read(req, ...this.callArguments(baseOptions, {
+        deadline: Infinity,
+    })));
+    return new Subscription_1.Subscription(createGRPCStream, utils_1.convertGrpcEvent, readableOptions);
+};
+//# sourceMappingURL=subscribeToStream.js.map

@@ -1,0 +1,2 @@
+import { StreamIdentifier } from "../../generated/shared_pb";
+export declare const createStreamIdentifier: (streamName: string) => StreamIdentifier;

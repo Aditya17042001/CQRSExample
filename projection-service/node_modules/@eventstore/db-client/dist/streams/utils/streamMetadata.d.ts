@@ -1,0 +1,53 @@
+import type { END, START } from "../../constants";
+/**
+ * Represents an access control list for a stream.
+ */
+export interface StreamACL {
+    /**
+     * Roles and users permitted to read the stream.
+     */
+    readRoles?: string[];
+    /**
+     * Roles and users permitted to write to the stream.
+     */
+    writeRoles?: string[];
+    /**
+     * Roles and users permitted to delete the stream.
+     */
+    deleteRoles?: string[];
+    /**
+     * Roles and users permitted to read stream metadata.
+     */
+    metaReadRoles?: string[];
+    /**
+     * Roles and users permitted to write stream metadata.
+     */
+    metaWriteRoles?: string[];
+}
+export interface SystemStreamMetadata {
+    /**
+     * The optional maximum age (in seconds) of events allowed in the stream.
+     */
+    maxAge?: number;
+    /**
+     * The optional streamPositon from which previous events can be scavenged.
+     * This is used to implement soft-deletion of streams.
+     */
+    truncateBefore?: typeof START | typeof END | number;
+    /**
+     * The optional amount of time (in seconds) for which the stream head is cacheable.
+     */
+    cacheControl?: number;
+    /**
+     * The optional ACL for the stream.
+     */
+    acl?: StreamACL;
+    /**
+     * The optional maximum number of events allowed in the stream.
+     */
+    maxCount?: number;
+}
+export type CustomStreamMetadata = Record<string | number, unknown>;
+export type StreamMetadata<CustomMetadata extends CustomStreamMetadata = CustomStreamMetadata> = SystemStreamMetadata & CustomMetadata;
+export declare const prepareStreamMetadata: <CustomMetadata extends CustomStreamMetadata = CustomStreamMetadata>(metadata: StreamMetadata<CustomMetadata>) => Record<string, unknown>;
+export declare const readStreamMetadata: <CustomMetadata extends CustomStreamMetadata = CustomStreamMetadata>(metadata: Record<string, unknown>) => StreamMetadata<CustomMetadata>;

@@ -1,0 +1,17 @@
+import type { MethodDefinition, ServiceError } from "@grpc/grpc-js";
+import { ServerFeaturesClient } from "../../generated/serverfeatures_grpc_pb";
+import type { SupportedMethods } from "../../generated/serverfeatures_pb";
+import type { GRPCClientConstructor } from "../types";
+type ExecuteClientCapabilities = [
+    GRPCClientConstructor<ServerFeaturesClient>,
+    string,
+    (c: ServerFeaturesClient) => Promise<ServerFeatures>
+];
+export declare class ServerFeatures {
+    #private;
+    serverVersion: string;
+    static readonly createServerFeatures: ExecuteClientCapabilities;
+    constructor(error: ServiceError | null, supportedMethods: SupportedMethods);
+    supports: (method: MethodDefinition<any, any>, feature?: string) => boolean;
+}
+export {};

@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.jsonEvent = void 0;
+const uuid_1 = require("uuid");
+const convertMetadata_1 = require("./convertMetadata");
+const jsonEvent = ({ type, data, metadata, id = (0, uuid_1.v4)(), }) => ({
+    id,
+    contentType: "application/json",
+    type,
+    data: data,
+    metadata: (0, convertMetadata_1.convertMetadata)(metadata),
+});
+exports.jsonEvent = jsonEvent;
+//# sourceMappingURL=jsonEvent.js.map

@@ -1,0 +1,29 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.excludeSystemEvents = exports.eventTypeFilter = exports.streamNameFilter = void 0;
+const constants_1 = require("../constants");
+const createFilterOn = (filterOn) => {
+    function createFilter({ checkpointInterval = 1, checkpointReached, ...options }) {
+        const filter = {
+            filterOn,
+            checkpointInterval,
+            checkpointReached,
+        };
+        if ("regex" in options) {
+            filter.regex = options.regex;
+        }
+        if ("prefixes" in options) {
+            filter.prefixes = options.prefixes;
+        }
+        if (options.maxSearchWindow != null) {
+            filter.maxSearchWindow = options.maxSearchWindow;
+        }
+        return filter;
+    }
+    return createFilter;
+};
+exports.streamNameFilter = createFilterOn(constants_1.STREAM_NAME);
+exports.eventTypeFilter = createFilterOn(constants_1.EVENT_TYPE);
+const excludeSystemEvents = (options = {}) => (0, exports.eventTypeFilter)({ regex: "^[^$].*", ...options });
+exports.excludeSystemEvents = excludeSystemEvents;
+//# sourceMappingURL=filter.js.map

@@ -1,0 +1,2 @@
+import type { ClientWritableStream } from "@grpc/grpc-js";
+export declare const backpressuredWrite: <T>(stream: ClientWritableStream<T>, data: T) => Promise<void>;

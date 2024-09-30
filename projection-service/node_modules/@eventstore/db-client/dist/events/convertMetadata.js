@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.convertMetadata = void 0;
+const convertMetadata = (metadata) => {
+    if (Buffer.isBuffer(metadata)) {
+        return Uint8Array.from(metadata);
+    }
+    return metadata;
+};
+exports.convertMetadata = convertMetadata;
+//# sourceMappingURL=convertMetadata.js.map

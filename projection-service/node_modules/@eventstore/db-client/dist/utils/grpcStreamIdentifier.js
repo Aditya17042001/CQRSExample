@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createStreamIdentifier = void 0;
+const shared_pb_1 = require("../../generated/shared_pb");
+const createStreamIdentifier = (streamName) => {
+    const identifier = new shared_pb_1.StreamIdentifier();
+    identifier.setStreamName(Uint8Array.from(Buffer.from(streamName, "utf8")));
+    return identifier;
+};
+exports.createStreamIdentifier = createStreamIdentifier;
+//# sourceMappingURL=grpcStreamIdentifier.js.map

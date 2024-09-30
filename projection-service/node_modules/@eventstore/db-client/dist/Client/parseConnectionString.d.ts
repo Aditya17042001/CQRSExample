@@ -1,0 +1,23 @@
+import type { Credentials, EndPoint, NodePreference } from "../types";
+export interface QueryOptions {
+    userCertFile?: string;
+    userKeyFile?: string;
+    maxDiscoverAttempts?: number;
+    connectionName?: string;
+    defaultDeadline?: number;
+    discoveryInterval?: number;
+    gossipTimeout?: number;
+    nodePreference?: NodePreference;
+    tls?: boolean;
+    tlsVerifyCert?: boolean;
+    tlsCAFile?: string;
+    throwOnAppendFailure?: boolean;
+    keepAliveInterval?: number;
+    keepAliveTimeout?: number;
+}
+export interface ConnectionOptions extends QueryOptions {
+    dnsDiscover: boolean;
+    defaultCredentials?: Credentials;
+    hosts: EndPoint[];
+}
+export declare const parseConnectionString: (connectionString: string) => ConnectionOptions;

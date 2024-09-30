@@ -1,0 +1,49 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const persistent_pb_1 = require("../../generated/persistent_pb");
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+const mapPersistentSubscriptionInfo_1 = require("./utils/mapPersistentSubscriptionInfo");
+Client_1.Client.prototype.getPersistentSubscriptionToStreamInfo = async function (streamName, groupName, options) {
+    utils_1.debug.command("getPersistentSubscriptionToStreamInfo: %O", {
+        streamName,
+        groupName,
+        options,
+    });
+    if (await this.supports(persistent_grpc_pb_1.PersistentSubscriptionsService.getInfo, "stream")) {
+        return getPersistentSubscriptionToStreamInfoGRPC.call(this, streamName, groupName, options);
+    }
+    return getPersistentSubscriptionToStreamInfoHTTP.call(this, streamName, groupName, options);
+};
+const getPersistentSubscriptionToStreamInfoGRPC = async function (streamName, groupName, baseOptions = {}) {
+    const req = new persistent_pb_1.GetInfoReq();
+    const options = new persistent_pb_1.GetInfoReq.Options();
+    const identifier = (0, utils_1.createStreamIdentifier)(streamName);
+    options.setStreamIdentifier(identifier);
+    options.setGroupName(groupName);
+    req.setOptions(options);
+    utils_1.debug.command_grpc("getPersistentSubscriptionToStreamInfo: %g", req);
+    return this.execute(persistent_grpc_pb_1.PersistentSubscriptionsClient, "getPersistentSubscriptionToStreamInfo", (client) => new Promise((resolve, reject) => {
+        client.getInfo(req, ...this.callArguments(baseOptions), (error, response) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve((0, mapPersistentSubscriptionInfo_1.mapPersistentSubscriptionToStreamInfo)(response.getSubscriptionInfo()));
+        });
+    }));
+};
+const getPersistentSubscriptionToStreamInfoHTTP = async function (streamName, groupName, baseOptions = {}) {
+    const info = await this.HTTPRequest("GET", `/subscriptions/${encodeURIComponent(streamName)}/${encodeURIComponent(groupName)}/info`, {
+        ...baseOptions,
+        transformError(statusCode) {
+            if (statusCode === 404) {
+                return new utils_1.PersistentSubscriptionDoesNotExistError(undefined, {
+                    streamName,
+                    groupName,
+                });
+            }
+        },
+    });
+    return (0, mapPersistentSubscriptionInfo_1.mapHTTPPersistentSubscriptionInfo)(info);
+};
+//# sourceMappingURL=getPersistentSubscriptionToStreamInfo.js.map

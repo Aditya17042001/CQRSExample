@@ -1,0 +1,15 @@
+import { ChannelCredentials } from "@grpc/grpc-js";
+import { EndPoint, NodePreference, VNodeState } from "../types";
+import type { DNSClusterOptions, GossipClusterOptions } from ".";
+export interface MemberInfo {
+    instanceId?: string;
+    timeStamp: number;
+    state: VNodeState;
+    isAlive: boolean;
+    httpEndpoint?: EndPoint;
+}
+export declare const discoverEndpoint: ({ discoveryInterval, maxDiscoverAttempts, gossipTimeout, nodePreference, ...settings }: DNSClusterOptions | GossipClusterOptions, credentials: ChannelCredentials, failedEndpoint?: EndPoint) => Promise<EndPoint>;
+export declare const isInAllowedState: (member: MemberInfo) => boolean;
+export declare const filterAndOrderMembers: (preference: NodePreference, members: MemberInfo[]) => MemberInfo[];
+export declare const determineBestNode: (preference: NodePreference, members: MemberInfo[]) => EndPoint | undefined;
+export declare const delay: (timeout: number) => Promise<void>;

@@ -1,0 +1,146 @@
+import type { SubscriptionInfo } from "../../../generated/persistent_pb";
+import type { Position } from "../../types";
+import type { PersistentSubscriptionToStreamSettings, PersistentSubscriptionToAllSettings } from "./persistentSubscriptionSettings";
+export type ExtraStatisticsKey = "mean" | "median" | "fastest" | "quintile 1" | "quintile 2" | "quintile 3" | "quintile 4" | "quintile 5" | "90%" | "95%" | "99%" | "99.5%" | "99.9%" | "highest";
+export interface PersistentSubscriptionConnectionInfo {
+    /** Origin of this connection. */
+    from: string;
+    /** Connection username. */
+    username: string;
+    /** The name of the connection. */
+    connectionName: string;
+    /** Average events per second on this connection. */
+    averageItemsPerSecond: number;
+    /** Total items on this connection. */
+    totalItems: bigint;
+    /** Number of items seen since last measurement on this connection (used as the basis for `averageItemsPerSecond`). */
+    countSinceLastMeasurement: bigint;
+    /** Number of available slots. */
+    availableSlots: number;
+    /** Number of in flight messages on this connection. */
+    inFlightMessages: number;
+    /** Timing measurements for the connection. Can be enabled with the `extraStatistics` setting. */
+    extraStatistics?: Map<ExtraStatisticsKey, bigint>;
+}
+interface PersistentSubscriptionStatsBase {
+    /** Average number of events per second. */
+    averagePerSecond: number;
+    /** Total number of events processed by subscription. */
+    totalItems: bigint;
+    /** Number of events seen since last measurement on this connection (used as the basis for `averagePerSecond`). */
+    countSinceLastMeasurement: bigint;
+    /** Current in flight messages across all connections. */
+    totalInFlightMessages: number;
+    /** Number of events in the read buffer. */
+    readBufferCount: number;
+    /** Number of events in the live buffer. */
+    liveBufferCount: bigint;
+    /** Number of events in the retry buffer. */
+    retryBufferCount: number;
+    /** The current number of parked messages. */
+    parkedMessageCount: bigint;
+    /** Current number of outstanding messages. */
+    outstandingMessagesCount: number;
+}
+export interface PersistentSubscriptionToStreamStats extends PersistentSubscriptionStatsBase {
+    /** The revision of the last checkpoint. */
+    lastCheckpointedEventRevision?: bigint;
+    /** The revision of the last known event. */
+    lastKnownEventRevision?: bigint;
+}
+export interface PersistentSubscriptionToAllStats extends PersistentSubscriptionStatsBase {
+    /** The position of the last checkpoint. */
+    lastCheckpointedEventPosition?: Position;
+    /** The position of the last known event. */
+    lastKnownEventPosition?: Position;
+}
+export interface PersistentSubscriptionToStreamInfo {
+    /** The source of events for the subscription. */
+    eventSource: string;
+    /** The group name given on creation. */
+    groupName: string;
+    /** The current status of the subscription. */
+    status: string;
+    /** The settings used to create the persistent subscription. */
+    settings: PersistentSubscriptionToStreamSettings;
+    /** The settings used to create the persistent subscription. */
+    stats: PersistentSubscriptionToStreamStats;
+    /** Active connections to the subscription. */
+    connections: PersistentSubscriptionConnectionInfo[];
+}
+export interface PersistentSubscriptionToAllInfo {
+    /** The source of events for the subscription. */
+    eventSource: "$all";
+    /** The group name given on creation. */
+    groupName: string;
+    /** The current status of the subscription. */
+    status: string;
+    /** The settings used to create the persistent subscription. */
+    settings: PersistentSubscriptionToAllSettings;
+    /** The settings used to create the persistent subscription. */
+    stats: PersistentSubscriptionToAllStats;
+    /** Active connections to the subscription. */
+    connections: PersistentSubscriptionConnectionInfo[];
+}
+export type PersistentSubscriptionToEitherInfo = PersistentSubscriptionToStreamInfo | PersistentSubscriptionToAllInfo;
+export declare const isPersistentSubscriptionToAllInfo: (info: PersistentSubscriptionToEitherInfo) => info is PersistentSubscriptionToAllInfo;
+export declare const isPersistentSubscriptionToStreamInfo: (info: PersistentSubscriptionToEitherInfo) => info is PersistentSubscriptionToStreamInfo;
+export declare const mapPersistentSubscriptionToEitherInfo: (response: SubscriptionInfo) => PersistentSubscriptionToEitherInfo;
+export declare const mapPersistentSubscriptionToStreamInfo: (response: SubscriptionInfo) => PersistentSubscriptionToStreamInfo;
+export declare const mapPersistentSubscriptionToAllInfo: (response: SubscriptionInfo) => PersistentSubscriptionToAllInfo;
+export interface HTTPSubscriptionInfo {
+    links: Array<{
+        href: string;
+        rel: string;
+    }>;
+    config: HTTPConfig;
+    eventStreamId: string;
+    groupName: string;
+    status: string;
+    averageItemsPerSecond: number;
+    parkedMessageUri: string;
+    parkedMessageCount?: number;
+    getMessagesUri: string;
+    totalItemsProcessed: number;
+    countSinceLastMeasurement: number;
+    lastProcessedEventNumber: number;
+    lastKnownEventNumber: number;
+    readBufferCount: number;
+    liveBufferCount: number;
+    retryBufferCount: number;
+    totalInFlightMessages: number;
+    outstandingMessagesCount: number;
+    connections: HTTPConnectionInfo[];
+}
+interface HTTPConfig {
+    resolveLinktos: boolean;
+    startFrom: number;
+    messageTimeoutMilliseconds: number;
+    extraStatistics: boolean;
+    maxRetryCount: number;
+    liveBufferSize: number;
+    bufferSize: number;
+    readBatchSize: number;
+    preferRoundRobin: boolean;
+    checkPointAfterMilliseconds: number;
+    minCheckPointCount: number;
+    maxCheckPointCount: number;
+    maxSubscriberCount: number;
+    namedConsumerStrategy: string;
+}
+interface HTTPConnectionInfo {
+    from: string;
+    username: string;
+    averageItemsPerSecond: number;
+    totalItemsProcessed: number;
+    countSinceLastMeasurement: number;
+    extraStatistics: Array<{
+        key: string;
+        value: number;
+    }>;
+    availableSlots: number;
+    inFlightMessages: number;
+    connectionName: string;
+}
+export declare const mapHTTPPersistentSubscriptionInfo: (response: HTTPSubscriptionInfo) => PersistentSubscriptionToStreamInfo;
+export {};

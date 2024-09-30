@@ -1,0 +1,36 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+const mapGrpcProjectionDetails_1 = require("./utils/mapGrpcProjectionDetails");
+Client_1.Client.prototype.getProjectionStatus = async function (projectionName, baseOptions = {}) {
+    const req = new projections_pb_1.StatisticsReq();
+    const options = new projections_pb_1.StatisticsReq.Options();
+    options.setName(projectionName);
+    req.setOptions(options);
+    utils_1.debug.command("getProjectionStatistics: %O", {
+        projectionName,
+        options: baseOptions,
+    });
+    utils_1.debug.command_grpc("getProjectionStatistics: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "getProjectionStatistics", (client) => {
+        const stream = client.statistics(req, ...this.callArguments(baseOptions));
+        return new Promise((resolve, reject) => {
+            let projectionDetail;
+            stream.on("error", (error) => {
+                reject((0, utils_1.convertToCommandError)(error));
+            });
+            stream.on("data", (resp) => {
+                if (!resp.hasDetails())
+                    return;
+                projectionDetail = (0, mapGrpcProjectionDetails_1.mapGrpcProjectionDetails)(resp.getDetails());
+            });
+            stream.on("end", () => {
+                resolve(projectionDetail);
+            });
+        });
+    });
+};
+//# sourceMappingURL=getProjectionStatus.js.map

@@ -1,0 +1,29 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.getProjectionResult = async function (projectionName, { partition = "", ...baseOptions } = {}) {
+    const req = new projections_pb_1.ResultReq();
+    const options = new projections_pb_1.ResultReq.Options();
+    options.setName(projectionName);
+    options.setPartition(partition);
+    req.setOptions(options);
+    utils_1.debug.command("getProjectionResult: %O", {
+        projectionName,
+        options: {
+            partition,
+            ...baseOptions,
+        },
+    });
+    utils_1.debug.command_grpc("getProjectionResult: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "getProjectionResult", (client) => new Promise((resolve, reject) => {
+        client.result(req, ...this.callArguments(baseOptions), (error, response) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve(response.getResult()?.toJavaScript());
+        });
+    }));
+};
+//# sourceMappingURL=getProjectionResult.js.map

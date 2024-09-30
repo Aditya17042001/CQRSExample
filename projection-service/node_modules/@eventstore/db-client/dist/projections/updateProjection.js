@@ -1,0 +1,34 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.updateProjection = async function (projectionName, query, { emitEnabled, ...baseOptions } = {}) {
+    const req = new projections_pb_1.UpdateReq();
+    const options = new projections_pb_1.UpdateReq.Options();
+    options.setName(projectionName);
+    options.setQuery(query);
+    if (emitEnabled == null) {
+        options.setNoEmitOptions(new shared_pb_1.Empty());
+    }
+    else {
+        options.setEmitEnabled(emitEnabled);
+    }
+    req.setOptions(options);
+    utils_1.debug.command("updateProjection: %O", {
+        projectionName,
+        query,
+        options: { emitEnabled, ...baseOptions },
+    });
+    utils_1.debug.command_grpc("updateProjection: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "updateProjection", (client) => new Promise((resolve, reject) => {
+        client.update(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+//# sourceMappingURL=updateProjection.js.map

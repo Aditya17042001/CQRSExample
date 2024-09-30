@@ -1,0 +1,13 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.isClientCancellationError = void 0;
+const grpc_js_1 = require("@grpc/grpc-js");
+const isServiceError = (error) => "code" in error;
+const isClientCancellationError = (err) => {
+    return (err instanceof Error &&
+        isServiceError(err) &&
+        err.code === grpc_js_1.status.CANCELLED &&
+        err.details === "Cancelled on client");
+};
+exports.isClientCancellationError = isClientCancellationError;
+//# sourceMappingURL=isClientCancellationError.js.map

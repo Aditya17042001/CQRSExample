@@ -1,0 +1,28 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const persistent_pb_1 = require("../../generated/persistent_pb");
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+Client_1.Client.prototype.deletePersistentSubscriptionToStream = async function (streamName, groupName, baseOptions = {}) {
+    const req = new persistent_pb_1.DeleteReq();
+    const options = new persistent_pb_1.DeleteReq.Options();
+    const identifier = (0, utils_1.createStreamIdentifier)(streamName);
+    options.setStreamIdentifier(identifier);
+    options.setGroupName(groupName);
+    req.setOptions(options);
+    utils_1.debug.command("deletePersistentSubscriptionToStream: %O", {
+        streamName,
+        groupName,
+        options: baseOptions,
+    });
+    utils_1.debug.command_grpc("deletePersistentSubscriptionToStream: %g", req);
+    return this.execute(persistent_grpc_pb_1.PersistentSubscriptionsClient, "deletePersistentSubscriptionToStream", (client) => new Promise((resolve, reject) => {
+        client.delete(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+//# sourceMappingURL=deletePersistentSubscriptionToStream.js.map

@@ -1,0 +1,38 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const shared_pb_1 = require("../../generated/shared_pb");
+const persistent_pb_1 = require("../../generated/persistent_pb");
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+const PersistentSubscriptionImpl_1 = require("./utils/PersistentSubscriptionImpl");
+Client_1.Client.prototype.subscribeToPersistentSubscriptionToAll = function (groupName, { bufferSize = 10, ...baseOptions } = {}, duplexOptions = {}) {
+    return new PersistentSubscriptionImpl_1.PersistentSubscriptionImpl(this.GRPCStreamCreator(persistent_grpc_pb_1.PersistentSubscriptionsClient, "subscribeToPersistentSubscriptionToAll", async (client) => {
+        if (!(await this.supports(persistent_grpc_pb_1.PersistentSubscriptionsService.read, "all"))) {
+            throw new utils_1.UnsupportedError("subscribeToPersistentSubscriptionToAll", "21.10");
+        }
+        const req = new persistent_pb_1.ReadReq();
+        const options = new persistent_pb_1.ReadReq.Options();
+        const uuidOption = new persistent_pb_1.ReadReq.Options.UUIDOption();
+        uuidOption.setString(new shared_pb_1.Empty());
+        options.setAll(new shared_pb_1.Empty());
+        options.setGroupName(groupName);
+        options.setBufferSize(bufferSize);
+        options.setUuidOption(uuidOption);
+        req.setOptions(options);
+        utils_1.debug.command("subscribeToPersistentSubscriptionToAll: %O", {
+            groupName,
+            options: {
+                bufferSize,
+                ...baseOptions,
+            },
+        });
+        utils_1.debug.command_grpc("subscribeToPersistentSubscriptionToAll: %g", req);
+        const stream = client.read(...this.callArguments(baseOptions, {
+            deadline: Infinity,
+        }));
+        stream.write(req);
+        return stream;
+    }), utils_1.convertPersistentSubscriptionGrpcEvent, duplexOptions);
+};
+//# sourceMappingURL=subscribeToPersistentSubscriptionToAll.js.map

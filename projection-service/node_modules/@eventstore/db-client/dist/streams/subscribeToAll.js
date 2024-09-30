@@ -1,0 +1,89 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const shared_pb_1 = require("../../generated/shared_pb");
+const streams_grpc_pb_1 = require("../../generated/streams_grpc_pb");
+const streams_pb_1 = require("../../generated/streams_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+const constants_1 = require("../constants");
+const Subscription_1 = require("./utils/Subscription");
+Client_1.Client.prototype.subscribeToAll = function ({ fromPosition = constants_1.START, resolveLinkTos = false, filter, ...baseOptions } = {}, readableOptions = {}) {
+    const req = new streams_pb_1.ReadReq();
+    const options = new streams_pb_1.ReadReq.Options();
+    const uuidOption = new streams_pb_1.ReadReq.Options.UUIDOption();
+    uuidOption.setString(new shared_pb_1.Empty());
+    const allOptions = new streams_pb_1.ReadReq.Options.AllOptions();
+    switch (fromPosition) {
+        case constants_1.START: {
+            allOptions.setStart(new shared_pb_1.Empty());
+            break;
+        }
+        case constants_1.END: {
+            allOptions.setEnd(new shared_pb_1.Empty());
+            break;
+        }
+        default: {
+            const grpcPos = new streams_pb_1.ReadReq.Options.Position();
+            grpcPos.setCommitPosition(fromPosition.commit.toString(10));
+            grpcPos.setPreparePosition(fromPosition.prepare.toString(10));
+            allOptions.setPosition(grpcPos);
+            break;
+        }
+    }
+    options.setAll(allOptions);
+    options.setResolveLinks(resolveLinkTos);
+    options.setSubscription(new streams_pb_1.ReadReq.Options.SubscriptionOptions());
+    options.setUuidOption(uuidOption);
+    if (filter) {
+        const expr = new streams_pb_1.ReadReq.Options.FilterOptions.Expression();
+        if ("prefixes" in filter) {
+            expr.setPrefixList(filter.prefixes);
+        }
+        if ("regex" in filter) {
+            expr.setRegex(filter.regex);
+        }
+        const filterOptions = new streams_pb_1.ReadReq.Options.FilterOptions();
+        switch (filter.filterOn) {
+            case constants_1.STREAM_NAME: {
+                filterOptions.setStreamIdentifier(expr);
+                break;
+            }
+            case constants_1.EVENT_TYPE: {
+                filterOptions.setEventType(expr);
+                break;
+            }
+        }
+        if (typeof filter.maxSearchWindow === "number") {
+            if (filter.maxSearchWindow <= 0) {
+                throw new Error("MaxSearchWindow must be greater than 0.");
+            }
+            filterOptions.setMax(filter.maxSearchWindow);
+        }
+        else {
+            filterOptions.setCount(new shared_pb_1.Empty());
+        }
+        if (filter.checkpointInterval <= 0) {
+            throw new Error("CheckpointInterval must be greater than 0.");
+        }
+        filterOptions.setCheckpointintervalmultiplier(filter.checkpointInterval);
+        options.setFilter(filterOptions);
+    }
+    else {
+        options.setNoFilter(new shared_pb_1.Empty());
+    }
+    req.setOptions(options);
+    utils_1.debug.command("subscribeToAll: %O", {
+        options: {
+            fromPosition,
+            resolveLinkTos,
+            filter,
+            ...baseOptions,
+        },
+    });
+    utils_1.debug.command_grpc("subscribeToAll: %g", req);
+    const createGRPCStream = this.GRPCStreamCreator(streams_grpc_pb_1.StreamsClient, "subscribeToAll", (client) => client.read(req, ...this.callArguments(baseOptions, {
+        deadline: Infinity,
+    })));
+    return new Subscription_1.Subscription(createGRPCStream, utils_1.convertGrpcEvent, readableOptions, filter?.checkpointReached);
+};
+//# sourceMappingURL=subscribeToAll.js.map

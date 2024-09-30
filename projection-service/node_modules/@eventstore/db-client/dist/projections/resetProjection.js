@@ -1,0 +1,25 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.resetProjection = async function (projectionName, baseOptions = {}) {
+    const req = new projections_pb_1.ResetReq();
+    const options = new projections_pb_1.ResetReq.Options();
+    options.setName(projectionName);
+    req.setOptions(options);
+    utils_1.debug.command("resetProjection: %O", {
+        projectionName,
+        options: baseOptions,
+    });
+    utils_1.debug.command_grpc("resetProjection: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "resetProjection", (client) => new Promise((resolve, reject) => {
+        client.reset(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+//# sourceMappingURL=resetProjection.js.map

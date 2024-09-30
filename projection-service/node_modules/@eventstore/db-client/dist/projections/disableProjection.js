@@ -1,0 +1,34 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.disableProjection = async function (projectionName, baseOptions = {}) {
+    return disableProjection("disableProjection", true).call(this, projectionName, baseOptions);
+};
+Client_1.Client.prototype.abortProjection = async function (projectionName, baseOptions = {}) {
+    return disableProjection("abortProjection", false).call(this, projectionName, baseOptions);
+};
+function disableProjection(debugName, writeCheckpoint) {
+    return async function (projectionName, baseOptions = {}) {
+        const req = new projections_pb_1.DisableReq();
+        const options = new projections_pb_1.DisableReq.Options();
+        options.setName(projectionName);
+        options.setWriteCheckpoint(writeCheckpoint);
+        req.setOptions(options);
+        utils_1.debug.command(`${debugName}: %O`, {
+            projectionName,
+            options: baseOptions,
+        });
+        utils_1.debug.command_grpc(`${debugName}: %g`, req);
+        return this.execute(projections_grpc_pb_1.ProjectionsClient, debugName, (client) => new Promise((resolve, reject) => {
+            client.disable(req, ...this.callArguments(baseOptions), (error) => {
+                if (error)
+                    return reject((0, utils_1.convertToCommandError)(error));
+                return resolve();
+            });
+        }));
+    };
+}
+//# sourceMappingURL=disableProjection.js.map

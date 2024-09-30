@@ -1,0 +1,33 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.deleteProjection = async function (projectionName, { deleteEmittedStreams = false, deleteStateStream = false, deleteCheckpointStream = false, ...baseOptions } = {}) {
+    const req = new projections_pb_1.DeleteReq();
+    const options = new projections_pb_1.DeleteReq.Options();
+    options.setName(projectionName);
+    options.setDeleteEmittedStreams(deleteEmittedStreams);
+    options.setDeleteStateStream(deleteStateStream);
+    options.setDeleteCheckpointStream(deleteCheckpointStream);
+    req.setOptions(options);
+    utils_1.debug.command("deleteProjection: %O", {
+        projectionName,
+        options: {
+            deleteEmittedStreams,
+            deleteStateStream,
+            deleteCheckpointStream,
+            ...baseOptions,
+        },
+    });
+    utils_1.debug.command_grpc("deleteProjection: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "deleteProjection", (client) => new Promise((resolve, reject) => {
+        client.delete(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+//# sourceMappingURL=deleteProjection.js.map

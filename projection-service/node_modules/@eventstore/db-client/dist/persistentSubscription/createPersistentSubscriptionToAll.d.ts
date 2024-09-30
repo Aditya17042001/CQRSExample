@@ -1,0 +1,23 @@
+import type { BaseOptions, Filter } from "../types";
+import type { PersistentSubscriptionToAllSettings } from "./utils/persistentSubscriptionSettings";
+export interface CreatePersistentSubscriptionToAllOptions extends BaseOptions {
+    /**
+     * Filters events or streams based upon a predicate.
+     */
+    filter?: Filter;
+}
+declare module "../Client" {
+    interface Client {
+        /**
+         * Creates a persistent subscription to all. Persistent subscriptions are special kind of subscription where the
+         * server remembers where the read offset is. This allows for many different modes of operations compared to a
+         * regular subscription where the client holds the read offset. The group name must be unique.
+         * Available from server version 21.10 onwards.
+         * @param groupName - A group name.
+         * @param settings - PersistentSubscription settings.
+         * @see {@link persistentSubscriptionToStreamSettingsFromDefaults}
+         * @param options - Command options.
+         */
+        createPersistentSubscriptionToAll(groupName: string, settings: PersistentSubscriptionToAllSettings, options?: CreatePersistentSubscriptionToAllOptions): Promise<void>;
+    }
+}

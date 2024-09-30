@@ -1,0 +1,3 @@
+import type { StatisticsResp } from "../../../generated/projections_pb";
+import type { ProjectionDetails } from "../../types";
+export declare const mapGrpcProjectionDetails: (grpcProjectionDetails: StatisticsResp.Details) => ProjectionDetails;

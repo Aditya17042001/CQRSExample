@@ -1,0 +1,48 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const projections_grpc_pb_1 = require("../../generated/projections_grpc_pb");
+const projections_pb_1 = require("../../generated/projections_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.createProjection = async function (projectionName, query, options = {}) {
+    utils_1.debug.command("createProjection: %O", {
+        projectionName,
+        query,
+        options,
+    });
+    if (options.trackEmittedStreams &&
+        !(await this.supports(projections_grpc_pb_1.ProjectionsService.create, "track_emitted_streams"))) {
+        return createProjectionHTTP.call(this, projectionName, query, options);
+    }
+    return createProjectionGRPC.call(this, projectionName, query, options);
+};
+const createProjectionGRPC = async function (projectionName, query, { emitEnabled = false, trackEmittedStreams = false, ...baseOptions } = {}) {
+    const req = new projections_pb_1.CreateReq();
+    const options = new projections_pb_1.CreateReq.Options();
+    const continuous = new projections_pb_1.CreateReq.Options.Continuous();
+    continuous.setName(projectionName);
+    continuous.setEmitEnabled(emitEnabled);
+    continuous.setTrackEmittedStreams(trackEmittedStreams);
+    options.setContinuous(continuous);
+    options.setQuery(query);
+    req.setOptions(options);
+    utils_1.debug.command_grpc("createProjection: %g", req);
+    return this.execute(projections_grpc_pb_1.ProjectionsClient, "createProjection", (client) => new Promise((resolve, reject) => {
+        client.create(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+const createProjectionHTTP = async function (projectionName, query, { emitEnabled = false, trackEmittedStreams = false, ...baseOptions } = {}) {
+    await this.HTTPRequest("POST", `/projections/continuous`, {
+        ...baseOptions,
+        searchParams: {
+            name: projectionName,
+            emit: emitEnabled.toString(),
+            trackemittedstreams: trackEmittedStreams.toString(),
+        },
+    }, query);
+};
+//# sourceMappingURL=createProjection.js.map

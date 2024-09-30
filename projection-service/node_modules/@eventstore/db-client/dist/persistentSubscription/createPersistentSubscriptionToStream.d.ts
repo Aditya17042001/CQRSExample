@@ -1,0 +1,17 @@
+import type { BaseOptions } from "../types";
+import type { PersistentSubscriptionToStreamSettings } from "./utils/persistentSubscriptionSettings";
+declare module "../Client" {
+    interface Client {
+        /**
+         * Creates a persistent subscription on a stream. Persistent subscriptions are special kind of subscription where the
+         * server remembers where the read offset is at. This allows for many different modes of operations compared to a
+         * regular subscription where the client holds the read offset. The pair stream name and group must be unique.
+         * @param streamName - A stream name.
+         * @param groupName - A group name.
+         * @param settings - PersistentSubscription settings.
+         * @see {@link persistentSubscriptionToStreamSettingsFromDefaults}
+         * @param options - Command options.
+         */
+        createPersistentSubscriptionToStream(streamName: string, groupName: string, settings: PersistentSubscriptionToStreamSettings, options?: BaseOptions): Promise<void>;
+    }
+}

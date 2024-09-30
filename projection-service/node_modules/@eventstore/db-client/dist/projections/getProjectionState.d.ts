@@ -1,0 +1,17 @@
+import type { BaseOptions } from "../types";
+export interface GetProjectionStateOptions extends BaseOptions {
+    /**
+     * Gets state from partition.
+     */
+    partition?: string;
+}
+declare module "../Client" {
+    interface Client {
+        /**
+         * Gets the result of a projection.
+         * @param projectionName - The name of the projection.
+         * @param options - Get state options.
+         */
+        getProjectionState<T = unknown>(projectionName: string, options?: GetProjectionStateOptions): Promise<T>;
+    }
+}

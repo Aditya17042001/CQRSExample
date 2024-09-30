@@ -1,0 +1,28 @@
+import type { BaseOptions } from "../types";
+export interface DeleteProjectionOptions extends BaseOptions {
+    /**
+     * Deletes emitted streams.
+     * @defaultValue false
+     */
+    deleteEmittedStreams?: boolean;
+    /**
+     * Deletes state stream.
+     * @defaultValue false
+     */
+    deleteStateStream?: boolean;
+    /**
+     * Deletes checkpoint stream.
+     * @defaultValue false
+     */
+    deleteCheckpointStream?: boolean;
+}
+declare module "../Client" {
+    interface Client {
+        /**
+         * Deletes a projection.
+         * @param projectionName - The name of the projection to delete.
+         * @param options - Delete projection options.
+         */
+        deleteProjection(projectionName: string, options?: DeleteProjectionOptions): Promise<void>;
+    }
+}

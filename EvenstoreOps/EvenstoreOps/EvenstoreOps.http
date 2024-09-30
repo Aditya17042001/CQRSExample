@@ -1,0 +1,6 @@
+@EvenstoreOps_HostAddress = http://localhost:5223
+
+GET {{EvenstoreOps_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

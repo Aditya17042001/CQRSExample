@@ -1,0 +1,4 @@
+import { UUID } from "../../generated/shared_pb";
+export declare const createUUID: (id?: string) => UUID;
+export declare function parseUUID(uuid: UUID): string;
+export declare function parseUUID(uuid: UUID | undefined): string | undefined;

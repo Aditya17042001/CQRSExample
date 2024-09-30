@@ -1,0 +1,54 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.unpackToCommandError = exports.unpackWrongExpectedVersion = void 0;
+const shared_pb_1 = require("../../../generated/shared_pb");
+const CommandError_1 = require("../../utils/CommandError");
+const unpackWrongExpectedVersion = (grpcError) => grpcError
+    .getDetails()
+    ?.unpack(shared_pb_1.WrongExpectedVersion.deserializeBinary, "event_store.client.WrongExpectedVersion") ?? null;
+exports.unpackWrongExpectedVersion = unpackWrongExpectedVersion;
+const unpackToCommandError = (grpcError, streamName) => {
+    const details = grpcError.getDetails();
+    const typename = details.getTypeName();
+    switch (typename) {
+        case "event_store.client.WrongExpectedVersion": {
+            const unpacked = details.unpack(shared_pb_1.WrongExpectedVersion.deserializeBinary, typename);
+            if (!unpacked)
+                break;
+            return CommandError_1.WrongExpectedVersionError.fromWrongExpectedVersion(unpacked, streamName);
+        }
+        case "event_store.client.StreamDeleted": {
+            const unpacked = details.unpack(shared_pb_1.StreamDeleted.deserializeBinary, typename);
+            if (!unpacked)
+                break;
+            return CommandError_1.StreamDeletedError.fromStreamName(streamName);
+        }
+        case "event_store.client.AccessDenied": {
+            const unpacked = details.unpack(shared_pb_1.AccessDenied.deserializeBinary, typename);
+            if (!unpacked)
+                break;
+            return new CommandError_1.AccessDeniedError();
+        }
+        case "event_store.client.Timeout": {
+            const unpacked = details.unpack(shared_pb_1.Timeout.deserializeBinary, typename);
+            if (!unpacked)
+                break;
+            return new CommandError_1.DeadlineExceededError();
+        }
+        case "event_store.client.Unknown": {
+            const unpacked = details.unpack(shared_pb_1.Unknown.deserializeBinary, typename);
+            if (!unpacked)
+                break;
+            return new CommandError_1.UnknownError();
+        }
+        case "event_store.client.MaximumAppendSizeExceeded": {
+            const unpacked = details.unpack(shared_pb_1.MaximumAppendSizeExceeded.deserializeBinary, typename);
+            if (!unpacked)
+                break;
+            return CommandError_1.MaxAppendSizeExceededError.fromMaxAppendSize(unpacked.getMaxappendsize());
+        }
+    }
+    return new CommandError_1.UnknownError(undefined, `Could not recognize ${grpcError.getMessage()}`);
+};
+exports.unpackToCommandError = unpackToCommandError;
+//# sourceMappingURL=unpackError.js.map

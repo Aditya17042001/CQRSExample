@@ -1,0 +1,36 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const shared_pb_1 = require("../../generated/shared_pb");
+const persistent_pb_1 = require("../../generated/persistent_pb");
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const utils_1 = require("../utils");
+const Client_1 = require("../Client");
+Client_1.Client.prototype.replayParkedMessagesToAll = async function (groupName, { stopAt, ...baseOptions } = {}) {
+    if (!(await this.supports(persistent_grpc_pb_1.PersistentSubscriptionsService.replayParked, "all"))) {
+        throw new utils_1.UnsupportedError("replayParkedMessagesToAll", "21.10.1");
+    }
+    const req = new persistent_pb_1.ReplayParkedReq();
+    const options = new persistent_pb_1.ReplayParkedReq.Options();
+    options.setAll(new shared_pb_1.Empty());
+    options.setGroupName(groupName);
+    if (stopAt != null) {
+        options.setStopAt(stopAt.toString(10));
+    }
+    else {
+        options.setNoLimit(new shared_pb_1.Empty());
+    }
+    req.setOptions(options);
+    utils_1.debug.command("replayParkedMessagesToAll: %O", {
+        groupName,
+        options: baseOptions,
+    });
+    utils_1.debug.command_grpc("replayParkedMessagesToAll: %g", req);
+    return this.execute(persistent_grpc_pb_1.PersistentSubscriptionsClient, "replayParkedMessagesToAll", (client) => new Promise((resolve, reject) => {
+        client.replayParked(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+//# sourceMappingURL=replayParkedMessagesToAll.js.map

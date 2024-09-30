@@ -1,0 +1,5 @@
+import type { Status } from "../../../generated/status_pb";
+import { WrongExpectedVersion } from "../../../generated/shared_pb";
+import { AccessDeniedError, MaxAppendSizeExceededError, StreamDeletedError, DeadlineExceededError, UnknownError, WrongExpectedVersionError } from "../../utils/CommandError";
+export declare const unpackWrongExpectedVersion: (grpcError: Status) => WrongExpectedVersion | null;
+export declare const unpackToCommandError: (grpcError: Status, streamName: string) => DeadlineExceededError | UnknownError | AccessDeniedError | StreamDeletedError | WrongExpectedVersionError | MaxAppendSizeExceededError;

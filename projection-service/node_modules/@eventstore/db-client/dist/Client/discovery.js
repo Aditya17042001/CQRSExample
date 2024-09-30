@@ -1,0 +1,135 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.delay = exports.determineBestNode = exports.filterAndOrderMembers = exports.isInAllowedState = exports.discoverEndpoint = void 0;
+const grpc_js_1 = require("@grpc/grpc-js");
+const gossip_grpc_pb_1 = require("../../generated/gossip_grpc_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const types_1 = require("../types");
+const constants_1 = require("../constants");
+const utils_1 = require("../utils");
+const discoverEndpoint = async ({ discoveryInterval = 100, maxDiscoverAttempts = 10, gossipTimeout = 5, nodePreference = constants_1.LEADER, ...settings }, credentials, failedEndpoint) => {
+    let discoverAttempts = 0;
+    while (discoverAttempts < maxDiscoverAttempts) {
+        discoverAttempts++;
+        try {
+            const candidates = "endpoints" in settings ? settings.endpoints : [settings.discover];
+            utils_1.debug.connection(`Starting discovery for candidates: %O`, candidates);
+            const candidateDiscoveryOrder = [...candidates]
+                .sort(shuffle)
+                .sort((a) => {
+                // Move failed endpoint to the last
+                if (a.address === failedEndpoint?.address &&
+                    a.port === failedEndpoint?.port) {
+                    return 1;
+                }
+                return 0;
+            });
+            for (const candidate of candidateDiscoveryOrder) {
+                try {
+                    const members = await listClusterMembers(candidate, credentials, createDeadline(gossipTimeout));
+                    const endpoint = (0, exports.determineBestNode)(nodePreference, members);
+                    if (endpoint)
+                        return Promise.resolve(endpoint);
+                }
+                catch (error) {
+                    utils_1.debug.connection(`Failed to get cluster list from ${candidate.address}:${candidate.port}`, error.toString());
+                    continue;
+                }
+            }
+        }
+        catch (error) {
+            utils_1.debug.connection(`Failed to resolve dns: `, error.toString());
+        }
+        await (0, exports.delay)(discoveryInterval);
+    }
+    throw new Error(`Failed to discover after ${discoverAttempts} attempts.`);
+};
+exports.discoverEndpoint = discoverEndpoint;
+const allowedStates = new Set([
+    types_1.VNodeState.FOLLOWER,
+    types_1.VNodeState.LEADER,
+    types_1.VNodeState.READONLYREPLICA,
+    types_1.VNodeState.PREREADONLYREPLICA,
+    types_1.VNodeState.READONLYLEADERLESS,
+]);
+const isInAllowedState = (member) => member.isAlive && allowedStates.has(member.state);
+exports.isInAllowedState = isInAllowedState;
+// getPreferedStates, higher index is better
+const getPreferedStates = (preference) => {
+    switch (preference) {
+        case constants_1.LEADER:
+            return [types_1.VNodeState.LEADER];
+        case constants_1.FOLLOWER:
+            return [types_1.VNodeState.FOLLOWER];
+        case constants_1.READ_ONLY_REPLICA:
+            return [
+                types_1.VNodeState.READONLYLEADERLESS,
+                types_1.VNodeState.PREREADONLYREPLICA,
+                types_1.VNodeState.READONLYREPLICA,
+            ];
+        default:
+            return [];
+    }
+};
+const compareByPreference = (preference) => {
+    const preferedStates = getPreferedStates(preference);
+    return (a, b) => preferedStates.indexOf(b.state) - preferedStates.indexOf(a.state);
+};
+const shuffle = () => Math.random() - 0.5;
+const filterAndOrderMembers = (preference, members) => members
+    .filter(exports.isInAllowedState)
+    .sort(shuffle)
+    .sort(compareByPreference(preference));
+exports.filterAndOrderMembers = filterAndOrderMembers;
+const determineBestNode = (preference, members) => {
+    utils_1.debug.connection(`Determining best node with preference "%s" from members: %O`, preference, members);
+    const [chosenMember] = (0, exports.filterAndOrderMembers)(preference, members);
+    if (!chosenMember || !chosenMember.httpEndpoint)
+        return undefined;
+    utils_1.debug.connection(`Chose member: %O`, chosenMember);
+    return {
+        address: chosenMember.httpEndpoint.address,
+        port: chosenMember.httpEndpoint.port,
+    };
+};
+exports.determineBestNode = determineBestNode;
+function createDeadline(seconds) {
+    const deadline = new Date();
+    deadline.setSeconds(deadline.getSeconds() + seconds);
+    return deadline;
+}
+function listClusterMembers(seed, credentials, deadline) {
+    const uri = `${seed.address}:${seed.port}`;
+    const client = new gossip_grpc_pb_1.GossipClient(uri, credentials, {});
+    return new Promise((resolve, reject) => {
+        client.read(new shared_pb_1.Empty(), new grpc_js_1.Metadata(), { deadline }, (error, info) => {
+            // regardless of the outcome, we are done with this client.
+            client.close();
+            if (error)
+                return reject(error);
+            const members = [];
+            for (const grpcMember of info.getMembersList()) {
+                let httpEndpoint;
+                const grpcHttpEndpoint = grpcMember.getHttpEndPoint();
+                if (grpcHttpEndpoint) {
+                    httpEndpoint = {
+                        address: grpcHttpEndpoint.getAddress(),
+                        port: grpcHttpEndpoint.getPort(),
+                    };
+                }
+                const member = {
+                    instanceId: (0, utils_1.parseUUID)(grpcMember.getInstanceId()),
+                    timeStamp: parseInt(grpcMember.getTimeStamp(), 10),
+                    state: grpcMember.getState(),
+                    isAlive: grpcMember.getIsAlive(),
+                    httpEndpoint,
+                };
+                members.push(member);
+            }
+            return resolve(members);
+        });
+    });
+}
+const delay = (timeout) => new Promise((resolve) => setTimeout(resolve, timeout));
+exports.delay = delay;
+//# sourceMappingURL=discovery.js.map

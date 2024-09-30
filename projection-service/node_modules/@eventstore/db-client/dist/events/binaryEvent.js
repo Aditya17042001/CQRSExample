@@ -1,0 +1,14 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.binaryEvent = void 0;
+const uuid_1 = require("uuid");
+const convertMetadata_1 = require("./convertMetadata");
+const binaryEvent = ({ type, data, metadata, id = (0, uuid_1.v4)(), }) => ({
+    id,
+    contentType: "application/octet-stream",
+    type,
+    data: Uint8Array.from(data),
+    metadata: (0, convertMetadata_1.convertMetadata)(metadata),
+});
+exports.binaryEvent = binaryEvent;
+//# sourceMappingURL=binaryEvent.js.map

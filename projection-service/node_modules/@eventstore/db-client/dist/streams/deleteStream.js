@@ -1,0 +1,51 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const streams_pb_1 = require("../../generated/streams_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const streams_grpc_pb_1 = require("../../generated/streams_grpc_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+const constants_1 = require("../constants");
+Client_1.Client.prototype.deleteStream = async function (streamName, { expectedRevision = constants_1.ANY, ...baseOptions } = {}) {
+    const req = new streams_pb_1.DeleteReq();
+    const options = new streams_pb_1.DeleteReq.Options();
+    const identifier = (0, utils_1.createStreamIdentifier)(streamName);
+    options.setStreamIdentifier(identifier);
+    switch (expectedRevision) {
+        case constants_1.ANY: {
+            options.setAny(new shared_pb_1.Empty());
+            break;
+        }
+        case constants_1.NO_STREAM: {
+            options.setNoStream(new shared_pb_1.Empty());
+            break;
+        }
+        default: {
+            options.setRevision(expectedRevision.toString(10));
+            break;
+        }
+    }
+    req.setOptions(options);
+    utils_1.debug.command("deleteStream: %O", {
+        streamName,
+        options: { expectedRevision, ...baseOptions },
+    });
+    utils_1.debug.command_grpc("deleteStream: %g", req);
+    return this.execute(streams_grpc_pb_1.StreamsClient, "deleteStream", (client) => new Promise((resolve, reject) => {
+        client.delete(req, ...this.callArguments(baseOptions), (error, resp) => {
+            if (error) {
+                return reject((0, utils_1.convertToCommandError)(error));
+            }
+            const result = {};
+            if (resp.hasPosition()) {
+                const grpcPos = resp.getPosition();
+                result.position = {
+                    commit: BigInt(grpcPos.getCommitPosition()),
+                    prepare: BigInt(grpcPos.getPreparePosition()),
+                };
+            }
+            return resolve(result);
+        });
+    }));
+};
+//# sourceMappingURL=deleteStream.js.map

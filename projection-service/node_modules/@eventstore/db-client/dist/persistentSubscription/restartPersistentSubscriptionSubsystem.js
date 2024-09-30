@@ -1,0 +1,30 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const persistent_grpc_pb_1 = require("../../generated/persistent_grpc_pb");
+const shared_pb_1 = require("../../generated/shared_pb");
+const Client_1 = require("../Client");
+const utils_1 = require("../utils");
+Client_1.Client.prototype.restartPersistentSubscriptionSubsystem = async function (options = {}) {
+    utils_1.debug.command("restartPersistentSubscriptionSubsystem: %O", {
+        options,
+    });
+    if (await this.supports(persistent_grpc_pb_1.PersistentSubscriptionsService.restartSubsystem)) {
+        return restartPersistentSubscriptionSubsystemGRPC.call(this, options);
+    }
+    return restartPersistentSubscriptionSubsystemHTTP.call(this, options);
+};
+const restartPersistentSubscriptionSubsystemGRPC = async function (baseOptions = {}) {
+    const req = new shared_pb_1.Empty();
+    utils_1.debug.command_grpc("restartPersistentSubscriptionSubsystem: %g", req);
+    return this.execute(persistent_grpc_pb_1.PersistentSubscriptionsClient, "restartPersistentSubscriptionSubsystem", (client) => new Promise((resolve, reject) => {
+        client.restartSubsystem(req, ...this.callArguments(baseOptions), (error) => {
+            if (error)
+                return reject((0, utils_1.convertToCommandError)(error));
+            return resolve();
+        });
+    }));
+};
+const restartPersistentSubscriptionSubsystemHTTP = async function (baseOptions = {}) {
+    await this.HTTPRequest("POST", "/subscriptions/restart", baseOptions);
+};
+//# sourceMappingURL=restartPersistentSubscriptionSubsystem.js.map

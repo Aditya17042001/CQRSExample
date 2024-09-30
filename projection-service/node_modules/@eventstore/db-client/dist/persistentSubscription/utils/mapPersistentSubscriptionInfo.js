@@ -1,0 +1,204 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.mapHTTPPersistentSubscriptionInfo = exports.mapPersistentSubscriptionToAllInfo = exports.mapPersistentSubscriptionToStreamInfo = exports.mapPersistentSubscriptionToEitherInfo = exports.isPersistentSubscriptionToStreamInfo = exports.isPersistentSubscriptionToAllInfo = void 0;
+const constants_1 = require("../../constants");
+const isPersistentSubscriptionToAllInfo = (info) => info.eventSource === "$all";
+exports.isPersistentSubscriptionToAllInfo = isPersistentSubscriptionToAllInfo;
+const isPersistentSubscriptionToStreamInfo = (info) => info.eventSource !== "$all";
+exports.isPersistentSubscriptionToStreamInfo = isPersistentSubscriptionToStreamInfo;
+const mapPersistentSubscriptionToEitherInfo = (response) => {
+    if (response.getEventSource() === "$all") {
+        return (0, exports.mapPersistentSubscriptionToAllInfo)(response);
+    }
+    return (0, exports.mapPersistentSubscriptionToStreamInfo)(response);
+};
+exports.mapPersistentSubscriptionToEitherInfo = mapPersistentSubscriptionToEitherInfo;
+const mapPersistentSubscriptionToStreamInfo = (response) => ({
+    eventSource: response.getEventSource(),
+    groupName: response.getGroupName(),
+    status: response.getStatus(),
+    settings: mapSettings(response),
+    connections: response.getConnectionsList().map(mapConnection),
+    stats: mapStats(response),
+});
+exports.mapPersistentSubscriptionToStreamInfo = mapPersistentSubscriptionToStreamInfo;
+const mapPersistentSubscriptionToAllInfo = (response) => ({
+    eventSource: response.getEventSource(),
+    groupName: response.getGroupName(),
+    status: response.getStatus(),
+    settings: mapToAllSettings(response),
+    connections: response.getConnectionsList().map(mapConnection),
+    stats: mapToAllStats(response),
+});
+exports.mapPersistentSubscriptionToAllInfo = mapPersistentSubscriptionToAllInfo;
+const stringToRevision = (str) => {
+    if (!str.length)
+        return undefined;
+    return BigInt(str);
+};
+const stringToStartFromRevision = (startFrom) => {
+    switch (startFrom) {
+        case "0":
+            return constants_1.START;
+        case "-1":
+            return constants_1.END;
+        default:
+            return stringToRevision(startFrom);
+    }
+};
+const positionRegex = /^C:(?<commit>[0-9]*)\/P:(?<prepare>[0-9]*)$/;
+const stringToPosition = (str) => {
+    if (!str.length)
+        return undefined;
+    const match = str.match(positionRegex);
+    if (!match || !match.groups)
+        return undefined;
+    return {
+        commit: BigInt(match.groups.commit),
+        prepare: BigInt(match.groups.prepare),
+    };
+};
+const stringToStartFromPostition = (startFrom) => {
+    switch (startFrom) {
+        case "C:0/P:0":
+            return constants_1.START;
+        case "C:-1/P:-1":
+            return constants_1.END;
+        default:
+            return stringToPosition(startFrom);
+    }
+};
+const mapMaxSubscriberCount = (count) => {
+    if (count === 0)
+        return constants_1.UNBOUNDED;
+    return count;
+};
+const mapSettingBase = (response) => ({
+    resolveLinkTos: response.getResolveLinkTos(),
+    extraStatistics: response.getExtraStatistics(),
+    messageTimeout: response.getMessageTimeoutMilliseconds(),
+    maxRetryCount: response.getMaxRetryCount(),
+    checkPointAfter: response.getCheckPointAfterMilliseconds(),
+    checkPointLowerBound: response.getMinCheckPointCount(),
+    checkPointUpperBound: response.getMaxCheckPointCount(),
+    maxSubscriberCount: mapMaxSubscriberCount(response.getMaxSubscriberCount()),
+    liveBufferSize: response.getLiveBufferSize(),
+    readBatchSize: response.getReadBatchSize(),
+    historyBufferSize: response.getBufferSize(),
+    consumerStrategyName: response.getNamedConsumerStrategy(),
+});
+const mapSettings = (response) => ({
+    ...mapSettingBase(response),
+    startFrom: stringToStartFromRevision(response.getStartFrom()),
+});
+const mapToAllSettings = (response) => ({
+    ...mapSettingBase(response),
+    startFrom: stringToStartFromPostition(response.getStartFrom()),
+});
+const mapConnection = (connection) => ({
+    from: connection.getFrom(),
+    username: connection.getUsername(),
+    averageItemsPerSecond: connection.getAverageItemsPerSecond(),
+    totalItems: BigInt(connection.getTotalItems()),
+    countSinceLastMeasurement: BigInt(connection.getCountSinceLastMeasurement()),
+    extraStatistics: connection
+        .getObservedMeasurementsList()
+        .reduce((acc, observedMeasurement) => {
+        if (acc == null)
+            acc = new Map();
+        acc.set(observedMeasurement.getKey().toLowerCase(), BigInt(observedMeasurement.getValue()));
+        return acc;
+    }, undefined),
+    availableSlots: connection.getAvailableSlots(),
+    inFlightMessages: connection.getInFlightMessages(),
+    connectionName: connection.getConnectionName(),
+});
+const mapStatsBase = (response) => ({
+    averagePerSecond: response.getAveragePerSecond(),
+    totalItems: BigInt(response.getTotalItems()),
+    countSinceLastMeasurement: BigInt(response.getCountSinceLastMeasurement()),
+    readBufferCount: response.getReadBufferCount(),
+    liveBufferCount: BigInt(response.getLiveBufferCount()),
+    retryBufferCount: response.getRetryBufferCount(),
+    totalInFlightMessages: response.getTotalInFlightMessages(),
+    outstandingMessagesCount: response.getOutstandingMessagesCount(),
+    parkedMessageCount: BigInt(response.getParkedMessageCount()),
+});
+const mapStats = (response) => ({
+    ...mapStatsBase(response),
+    lastCheckpointedEventRevision: stringToRevision(response.getLastCheckpointedEventPosition()),
+    lastKnownEventRevision: stringToRevision(response.getLastKnownEventPosition()),
+});
+const mapToAllStats = (response) => ({
+    ...mapStatsBase(response),
+    lastCheckpointedEventPosition: stringToPosition(response.getLastCheckpointedEventPosition()),
+    lastKnownEventPosition: stringToPosition(response.getLastKnownEventPosition()),
+});
+const mapHTTPPersistentSubscriptionInfo = (response) => ({
+    eventSource: response.eventStreamId,
+    groupName: response.groupName,
+    status: response.status,
+    settings: mapHTTPSettings(response),
+    connections: response.connections.map(mapHTTPConnection),
+    stats: mapHTTPStats(response),
+});
+exports.mapHTTPPersistentSubscriptionInfo = mapHTTPPersistentSubscriptionInfo;
+const mapHTTPSettings = (response) => ({
+    startFrom: mapHTTPStartFrom(response.config.startFrom),
+    resolveLinkTos: response.config.resolveLinktos,
+    extraStatistics: response.config.extraStatistics,
+    messageTimeout: response.config.messageTimeoutMilliseconds,
+    maxRetryCount: response.config.maxRetryCount,
+    checkPointAfter: response.config.checkPointAfterMilliseconds,
+    checkPointLowerBound: response.config.minCheckPointCount,
+    checkPointUpperBound: response.config.maxCheckPointCount,
+    maxSubscriberCount: mapMaxSubscriberCount(response.config.maxSubscriberCount),
+    liveBufferSize: response.config.liveBufferSize,
+    readBatchSize: response.config.readBatchSize,
+    historyBufferSize: response.config.bufferSize,
+    consumerStrategyName: response.config.namedConsumerStrategy,
+});
+const mapHTTPStartFrom = (startFrom) => {
+    switch (startFrom) {
+        case 0:
+            return constants_1.START;
+        case -1:
+            return constants_1.END;
+        default:
+            return BigInt(startFrom);
+    }
+};
+const mapHTTPStats = (response) => ({
+    averagePerSecond: response.averageItemsPerSecond,
+    totalItems: BigInt(response.totalItemsProcessed),
+    countSinceLastMeasurement: BigInt(response.countSinceLastMeasurement),
+    readBufferCount: response.readBufferCount,
+    liveBufferCount: BigInt(response.liveBufferCount),
+    retryBufferCount: response.retryBufferCount,
+    totalInFlightMessages: response.totalInFlightMessages,
+    outstandingMessagesCount: response.outstandingMessagesCount,
+    parkedMessageCount: BigInt(response.parkedMessageCount ?? 0),
+    lastCheckpointedEventRevision: response.lastProcessedEventNumber < 0
+        ? undefined
+        : BigInt(response.lastProcessedEventNumber),
+    lastKnownEventRevision: response.lastKnownEventNumber < 0
+        ? undefined
+        : BigInt(response.lastKnownEventNumber),
+});
+const mapHTTPConnection = (connection) => ({
+    from: connection.from,
+    username: connection.username,
+    connectionName: connection.connectionName,
+    averageItemsPerSecond: connection.averageItemsPerSecond,
+    totalItems: BigInt(connection.totalItemsProcessed),
+    countSinceLastMeasurement: BigInt(connection.countSinceLastMeasurement),
+    availableSlots: connection.availableSlots,
+    inFlightMessages: connection.inFlightMessages,
+    extraStatistics: connection.extraStatistics.reduce((acc, { key, value }) => {
+        if (acc == null)
+            acc = new Map();
+        acc.set(key.toLowerCase(), BigInt(value));
+        return acc;
+    }, undefined),
+});
+//# sourceMappingURL=mapPersistentSubscriptionInfo.js.map

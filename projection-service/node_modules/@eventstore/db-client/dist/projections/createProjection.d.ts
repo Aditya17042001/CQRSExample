@@ -1,0 +1,24 @@
+import type { BaseOptions } from "../types";
+export interface CreateProjectionOptions extends BaseOptions {
+    /**
+     * Enables emitting from the projection.
+     * @defaultValue false
+     */
+    emitEnabled?: boolean;
+    /**
+     * Enables tracking emitted streams.
+     * @defaultValue false
+     */
+    trackEmittedStreams?: boolean;
+}
+declare module "../Client" {
+    interface Client {
+        /**
+         * Creates a continuous projection.
+         * @param projectionName - The name of the projection.
+         * @param query - The query to run.
+         * @param options - Projection options.
+         */
+        createProjection(projectionName: string, query: string, options?: CreateProjectionOptions): Promise<void>;
+    }
+}

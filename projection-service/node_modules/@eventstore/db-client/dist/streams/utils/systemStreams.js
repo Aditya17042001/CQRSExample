@@ -1,0 +1,28 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.originalStreamOf = exports.metastreamOf = exports.isMetastream = exports.isSystemStream = void 0;
+/**
+ * Returns true if the stream is a system stream.
+ * @param streamId - The stream id to test against.
+ */
+const isSystemStream = (streamId) => streamId[0] === "$";
+exports.isSystemStream = isSystemStream;
+/**
+ * Returns true if the stream is a metadata stream.
+ * @param streamId - The stream id to test against.
+ */
+const isMetastream = (streamId) => streamId.slice(0, 2) == "$$";
+exports.isMetastream = isMetastream;
+/**
+ * Returns the metadata stream of the stream.
+ * @param streamId - The stream id to get the metastream name of.
+ */
+const metastreamOf = (streamId) => `$$${streamId}`;
+exports.metastreamOf = metastreamOf;
+/**
+ * Returns the original stream of the metadata stream.
+ * @param metastreamId - The metastream id to get the original stream name of.
+ */
+const originalStreamOf = (metastreamId) => metastreamId.slice(2);
+exports.originalStreamOf = originalStreamOf;
+//# sourceMappingURL=systemStreams.js.map
